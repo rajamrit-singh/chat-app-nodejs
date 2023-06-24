@@ -4,12 +4,6 @@ const express = require('express');
 const socketio = require('socket.io')
 var Filter = require('bad-words');
 const { generateMessage, generateLocationMessage } = require('./utils/messages');
-const {
-    addUser,
-    removeUser,
-    getUser,
-    getUsersInRoom
-} = require('./utils/users');
 
 const app = express();
 const server = http.createServer(app);
@@ -18,6 +12,13 @@ const server = http.createServer(app);
    explicitly mentioned as done above.
 */
 const io = socketio(server)     
+const {
+    addUser,
+    removeUser,
+    getUser,
+    getUsersInRoom,
+    users
+} = require('./utils/users');
 
 const port = process.env.PORT || 3000;
 const publicDirectoryPath = path.join(__dirname, '../public');
@@ -38,6 +39,10 @@ io.on('connection', (socket) => {
         // socket.broadcast.emit('message', generateMessage('A new user has joined'));   //this will broadcast the message to everyone except the current user
         socket.broadcast.to(user.room).emit('message', generateMessage('Admin', `${user.username} has joined the chat`));  //this will broadcast the message to everyone in that particular toom
         callback();
+        io.to(user.room).emit('roomData', {
+            room: user.room,
+            users: getUsersInRoom(user.room)
+        })
     });
     
     socket.on('sendMessage', (message, callback) => {
@@ -56,6 +61,10 @@ io.on('connection', (socket) => {
 
         if (user) {
             io.to(user.room).emit('message', generateMessage('Admin', `${user.username} has left the chat`));
+            io.to(user.room).emit('roomData', {
+                room: user.room,
+                users: getUsersInRoom(user.room)
+            })
         }
     })
 

@@ -8,30 +8,38 @@ const $sendLocationButton = document.querySelector('#send-location');
 const $messages = document.querySelector('#messages');
 
 //templates
-const $messageTemplate = document.querySelector('#message-template').innerHTML;
-const $locationTemplate = document.querySelector('#location-template').innerHTML;
-
+const messageTemplate = document.querySelector('#message-template').innerHTML;
+const locationTemplate = document.querySelector('#location-template').innerHTML;
+const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML;
 // Options
 const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true });
 
 socket.on('message' , (message) => {
     console.log(message);
-    const html = Mustache.render($messageTemplate, {
+    const html = Mustache.render(messageTemplate, {
         username: message.username,
         message: message.text,
         createdAt: moment(message.createdAt).format('hh:mm A')
     });
-    $messages.insertAdjacentHTML('beforeend', html)
+    $messages.insertAdjacentHTML('beforeend', html);
 });
 
 socket.on('locationMessage', (message) => {
     console.log(message);
-    const html = Mustache.render($locationTemplate, {
+    const html = Mustache.render(locationTemplate, {
         username: message.username,
         url: message.url,
         createdAt: moment(message.createdAt).format('hh:mm A')
     });
-    $messages.insertAdjacentHTML('beforeend', html)
+    $messages.insertAdjacentHTML('beforeend', html);
+});
+
+socket.on('roomData', ({ room, users }) => {
+    const html = Mustache.render(sidebarTemplate, {
+        room,
+        users
+    });
+    document.querySelector('#sidebar').innerHTML = html;
 })
 
 $messageForm.addEventListener('submit', (event) => {
@@ -52,7 +60,7 @@ $messageForm.addEventListener('submit', (event) => {
             console.log('Message delivered');
         }
     });
-})
+});
 
 $sendLocationButton.addEventListener('click', (event) => {
     if (!navigator.geolocation) {
@@ -66,13 +74,13 @@ $sendLocationButton.addEventListener('click', (event) => {
         }, () => {
             console.log('Location Shared');     //Acknowledgement for location share
             $sendLocationButton.removeAttribute('disabled');
-        })
-    })
-})
+        });
+    });
+});
 
 socket.emit('join', { username, room }, (error) => {
     if(error) {
         alert(error);
         location.href = '/'
     }
-})
+});
