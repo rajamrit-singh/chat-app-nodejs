@@ -20,8 +20,15 @@ app.use(express.static(publicDirectoryPath));
 
 io.on('connection', (socket) => {
     console.log('new web socket')
-    socket.emit('message', generateMessage('Welcome'));
-    socket.broadcast.emit('message', generateMessage('A new user has joined'));   //this will broadcast the message to everyone except the current user
+    
+    socket.on('join', ({ username, room }) => {
+        socket.join(room);
+        
+        socket.emit('message', generateMessage('Welcome'));
+        // socket.broadcast.emit('message', generateMessage('A new user has joined'));   //this will broadcast the message to everyone except the current user
+        socket.broadcast.to(room).emit('message', generateMessage(`${username} has joined the chat`));  //this will broadcast the message to everyone in that particular toom
+     })
+    
     socket.on('sendMessage', (message, callback) => {
         const filter = new Filter();
         if (filter.isProfane(message)) {
@@ -39,6 +46,7 @@ io.on('connection', (socket) => {
         io.emit('locationMessage', generateLocationMessage(`https://google.com/maps?q=${latitude},${longitude}`));
         callback();
     })
+    
 })
 
 server.listen(port, () => {
